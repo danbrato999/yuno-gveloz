@@ -36,7 +36,7 @@ func (o *orderStore) FindByID(id uint) (*domain.Order, error) {
 func (o *orderStore) GetAll(filters *domain.OrderFilters) ([]domain.Order, error) {
 	var orders []models.Order
 
-	tx := o.db.Table("orders")
+	tx := o.db.Table("orders").Preload("Dishes")
 
 	if filters != nil && len(filters.AnyStatus) > 0 {
 		tx.Where("status in (?)", filters.AnyStatus)
