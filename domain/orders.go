@@ -19,9 +19,3 @@ type Order struct {
 func (o *Order) IsNewStatusValid(status OrderStatus) bool {
 	return statusWeights[o.Status] < statusWeights[status]
 }
-
-type OrderStore interface {
-	Save(order Order) (*Order, error)
-	FindByID(id uint) (*Order, error)
-	GetAll() ([]*Order, error)
-}

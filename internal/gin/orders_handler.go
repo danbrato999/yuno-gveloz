@@ -32,7 +32,21 @@ func (o *OrdersHandler) Create(c *gin.Context) {
 }
 
 func (o *OrdersHandler) List(c *gin.Context) {
-	orders, err := o.orderService.FindMany()
+	var queryParams struct {
+		Active bool `form:"active"`
+	}
+
+	if err := c.BindQuery(&queryParams); err != nil {
+		return
+	}
+
+	var filters []domain.OrderFilterFn
+
+	if queryParams.Active {
+		filters = append(filters, domain.FilterActive)
+	}
+
+	orders, err := o.orderService.FindMany(filters...)
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)

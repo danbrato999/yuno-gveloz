@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/danbrato999/yuno-gveloz/domain"
+	"github.com/danbrato999/yuno-gveloz/domain/services"
 	"github.com/danbrato999/yuno-gveloz/internal/gorm/mappers"
 	"github.com/danbrato999/yuno-gveloz/internal/gorm/models"
 	"gorm.io/gorm"
@@ -14,7 +15,7 @@ type orderStore struct {
 	db *gorm.DB
 }
 
-func NewOrderStore(db *gorm.DB) domain.OrderStore {
+func NewOrderStore(db *gorm.DB) services.OrderStore {
 	return &orderStore{
 		db: db,
 	}
@@ -32,10 +33,16 @@ func (o *orderStore) FindByID(id uint) (*domain.Order, error) {
 	return mappers.OrderFromDB(&order), nil
 }
 
-func (o *orderStore) GetAll() ([]*domain.Order, error) {
+func (o *orderStore) GetAll(filters *domain.OrderFilters) ([]*domain.Order, error) {
 	var orders []models.Order
 
-	if err := o.db.Find(&orders).Error; err != nil {
+	tx := o.db.Table("orders")
+
+	if filters != nil && len(filters.AnyStatus) > 0 {
+		tx.Where("status in (?)", filters.AnyStatus)
+	}
+
+	if err := tx.Find(&orders).Error; err != nil {
 		return nil, err
 	}
 

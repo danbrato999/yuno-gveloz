@@ -35,8 +35,14 @@ func (s *OrderService) FindByID(id uint) (*Order, error) {
 	return order, nil
 }
 
-func (s *OrderService) FindMany() ([]*Order, error) {
-	return s.store.GetAll()
+func (s *OrderService) FindMany(filters ...OrderFilterFn) ([]*Order, error) {
+	orderFilters := &OrderFilters{}
+
+	for _, filter := range filters {
+		filter(orderFilters)
+	}
+
+	return s.store.GetAll(orderFilters)
 }
 
 func (s *OrderService) UpdateStatus(id uint, status OrderStatus) (*Order, error) {
