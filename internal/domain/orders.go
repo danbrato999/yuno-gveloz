@@ -43,7 +43,7 @@ type Order struct {
 }
 
 type OrderStore interface {
-	Save(order *Order) (*Order, error)
+	Save(order Order) (*Order, error)
 	FindByID(id uint) (*Order, error)
 	GetAll() ([]*Order, error)
 }
@@ -64,7 +64,7 @@ func (s *OrderService) CreateOrder(request NewOrder) (*Order, error) {
 		Status:   OrderStatusPending,
 	}
 
-	return s.store.Save(&order)
+	return s.store.Save(order)
 }
 
 func (s *OrderService) FindByID(id uint) (*Order, error) {
@@ -99,7 +99,7 @@ func (s *OrderService) Update(id uint, request OrderUpdate) (*Order, error) {
 	existing.Dishes = request.Dishes
 	existing.Status = request.Status
 
-	return s.store.Save(existing)
+	return s.store.Save(*existing)
 }
 
 func (s *OrderService) Cancel(id uint) (*Order, error) {
@@ -111,5 +111,5 @@ func (s *OrderService) Cancel(id uint) (*Order, error) {
 
 	existing.Status = OrderStatusCancelled
 
-	return s.store.Save(existing)
+	return s.store.Save(*existing)
 }
