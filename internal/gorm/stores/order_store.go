@@ -5,7 +5,6 @@ import (
 
 	"github.com/danbrato999/yuno-gveloz/domain"
 	"github.com/danbrato999/yuno-gveloz/domain/services"
-	"github.com/danbrato999/yuno-gveloz/internal/gorm/mappers"
 	"github.com/danbrato999/yuno-gveloz/internal/gorm/models"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -30,7 +29,7 @@ func (o *orderStore) FindByID(id uint) (*domain.Order, error) {
 		return nil, err
 	}
 
-	return mappers.OrderFromDB(&order), nil
+	return OrderFromDB(&order), nil
 }
 
 func (o *orderStore) GetAll(filters *domain.OrderFilters) ([]domain.Order, error) {
@@ -49,14 +48,14 @@ func (o *orderStore) GetAll(filters *domain.OrderFilters) ([]domain.Order, error
 	results := make([]domain.Order, len(orders))
 
 	for i, order := range orders {
-		results[i] = *mappers.OrderFromDB(&order)
+		results[i] = *OrderFromDB(&order)
 	}
 
 	return results, nil
 }
 
 func (o *orderStore) Save(order domain.Order) (*domain.Order, error) {
-	dbOrder := mappers.OrderToDB(order)
+	dbOrder := OrderToDB(order)
 
 	err := o.db.Transaction(func(tx *gorm.DB) error {
 		if err2 := tx.Omit(clause.Associations).Save(&dbOrder).Error; err2 != nil {
@@ -76,4 +75,53 @@ func (o *orderStore) Save(order domain.Order) (*domain.Order, error) {
 
 	order.ID = dbOrder.ID
 	return &order, nil
+}
+
+func OrderFromDB(order *models.Order) *domain.Order {
+	if order == nil {
+		return nil
+	}
+
+	dishes := make([]domain.Dish, len(order.Dishes))
+
+	for i, dish := range order.Dishes {
+		dishes[i] = domain.Dish{
+			Name: dish.Name,
+		}
+	}
+
+	return &domain.Order{
+		ID:     order.ID,
+		Status: order.Status,
+		NewOrder: domain.NewOrder{
+			Dishes: dishes,
+			Source: order.Source,
+			Time:   *order.Time,
+		},
+	}
+}
+
+func OrderToDB(order domain.Order) models.Order {
+	dishes := make([]models.OrderDish, len(order.Dishes))
+
+	for i, dish := range order.Dishes {
+		dishes[i] = models.OrderDish{
+			Name: dish.Name,
+		}
+	}
+
+	dbOrder := models.Order{
+		Dishes: dishes,
+		Source: order.Source,
+		Status: order.Status,
+		Time:   &order.Time,
+	}
+
+	if order.ID > 0 {
+		dbOrder.Model = gorm.Model{
+			ID: order.ID,
+		}
+	}
+
+	return dbOrder
 }

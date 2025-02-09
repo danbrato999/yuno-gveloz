@@ -10,6 +10,11 @@ type NewOrder struct {
 	Source OrderSource `json:"source" binding:"oneof=in_person delivery phone"`
 }
 
+type OrderWithStatusHistory struct {
+	Order
+	StatusHistory []OrderStatusHistory `json:"status_history"`
+}
+
 type Order struct {
 	ID     uint        `json:"id"`
 	Status OrderStatus `json:"status"`
@@ -18,9 +23,4 @@ type Order struct {
 
 func (o *Order) IsNewStatusValid(status OrderStatus) bool {
 	return statusWeights[o.Status] < statusWeights[status]
-}
-
-type OrderWithStatusHistory struct {
-	Order
-	StatusHistory []OrderStatusHistory `json:"status_history"`
 }
