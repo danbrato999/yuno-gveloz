@@ -23,7 +23,8 @@ func main() {
 	}
 
 	orderStore := dbAdapter.NewOrderStore(db)
-	orderService := services.NewOrderService(orderStore)
+	orderStatusStore := dbAdapter.NewOrderStatusStore(db)
+	orderService := services.NewOrderService(orderStore, orderStatusStore)
 
 	server := gin.GetServer(orderService)
 	server.Run(":9001")

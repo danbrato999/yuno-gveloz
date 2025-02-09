@@ -33,7 +33,7 @@ func (o *orderStore) FindByID(id uint) (*domain.Order, error) {
 	return mappers.OrderFromDB(&order), nil
 }
 
-func (o *orderStore) GetAll(filters *domain.OrderFilters) ([]*domain.Order, error) {
+func (o *orderStore) GetAll(filters *domain.OrderFilters) ([]domain.Order, error) {
 	var orders []models.Order
 
 	tx := o.db.Table("orders")
@@ -46,10 +46,10 @@ func (o *orderStore) GetAll(filters *domain.OrderFilters) ([]*domain.Order, erro
 		return nil, err
 	}
 
-	results := make([]*domain.Order, len(orders))
+	results := make([]domain.Order, len(orders))
 
 	for i, order := range orders {
-		results[i] = mappers.OrderFromDB(&order)
+		results[i] = *mappers.OrderFromDB(&order)
 	}
 
 	return results, nil

@@ -3,12 +3,14 @@ package services
 import . "github.com/danbrato999/yuno-gveloz/domain"
 
 type OrderService struct {
-	store OrderStore
+	orderStore  OrderStore
+	statusStore OrderStatusStore
 }
 
-func NewOrderService(store OrderStore) *OrderService {
+func NewOrderService(store OrderStore, statusStore OrderStatusStore) *OrderService {
 	return &OrderService{
-		store: store,
+		orderStore:  store,
+		statusStore: statusStore,
 	}
 }
 
@@ -18,31 +20,42 @@ func (s *OrderService) CreateOrder(request NewOrder) (*Order, error) {
 		Status:   OrderStatusPending,
 	}
 
-	return s.store.Save(order)
+	result, err := s.orderStore.Save(order)
+	if err != nil {
+		return nil, err
+	}
+
+	go s.statusStore.AddCurrentStatus(result)
+
+	return result, nil
 }
 
-func (s *OrderService) FindByID(id uint) (*Order, error) {
-	order, err := s.store.FindByID(id)
+func (s *OrderService) FindByID(id uint) (*OrderWithStatusHistory, error) {
+	order, err := s.findByID(id)
 
 	if err != nil {
 		return nil, err
 	}
 
-	if order == nil {
-		return nil, ErrOrderNotFound
+	history, err := s.statusStore.GetHistory(id)
+	if err != nil {
+		return nil, err
 	}
 
-	return order, nil
+	return &OrderWithStatusHistory{
+		Order:         *order,
+		StatusHistory: history,
+	}, nil
 }
 
-func (s *OrderService) FindMany(filters ...OrderFilterFn) ([]*Order, error) {
+func (s *OrderService) FindMany(filters ...OrderFilterFn) ([]Order, error) {
 	orderFilters := &OrderFilters{}
 
 	for _, filter := range filters {
 		filter(orderFilters)
 	}
 
-	return s.store.GetAll(orderFilters)
+	return s.orderStore.GetAll(orderFilters)
 }
 
 func (s *OrderService) UpdateStatus(id uint, status OrderStatus) (*Order, error) {
@@ -57,28 +70,18 @@ func (s *OrderService) UpdateStatus(id uint, status OrderStatus) (*Order, error)
 
 	existing.Status = status
 
-	return s.store.Save(*existing)
+	result, err := s.orderStore.Save(*existing)
+	if err != nil {
+		return nil, err
+	}
+
+	go s.statusStore.AddCurrentStatus(result)
+
+	return result, nil
 }
 
-// func (s *OrderService) Update(id uint, request OrderUpdate) (*Order, error) {
-// 	existing, err := s.FindByID(id)
-
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	if (existing.Status == OrderStatusDone || existing.Status == OrderStatusCancelled) && len(existing.Dishes) > 0 {
-// 		return nil, fmt.Errorf("Order contents cannot be updated")
-// 	}
-
-// 	existing.Dishes = request.Dishes
-// 	existing.Status = request.Status
-
-// 	return s.store.Save(*existing)
-// }
-
 func (s *OrderService) findActiveOrder(id uint) (*Order, error) {
-	existing, err := s.FindByID(id)
+	existing, err := s.findByID(id)
 
 	if err != nil {
 		return nil, err
@@ -89,4 +92,18 @@ func (s *OrderService) findActiveOrder(id uint) (*Order, error) {
 	}
 
 	return existing, nil
+}
+
+func (s *OrderService) findByID(id uint) (*Order, error) {
+	order, err := s.orderStore.FindByID(id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if order == nil {
+		return nil, ErrOrderNotFound
+	}
+
+	return order, nil
 }

@@ -7,15 +7,18 @@ import (
 	"gorm.io/gorm"
 )
 
-func Migrate(db *gorm.DB) (err error) {
-	if err = db.AutoMigrate(&models.Order{}); err != nil {
-		return
-	}
-
-	err = db.AutoMigrate(&models.OrderDish{})
-	return
+func Migrate(db *gorm.DB) error {
+	return db.AutoMigrate(
+		&models.Order{},
+		&models.OrderDish{},
+		&models.OrderStatus{},
+	)
 }
 
 func NewOrderStore(db *gorm.DB) services.OrderStore {
 	return stores.NewOrderStore(db)
+}
+
+func NewOrderStatusStore(db *gorm.DB) services.OrderStatusStore {
+	return stores.NewOrderStatusStore(db)
 }

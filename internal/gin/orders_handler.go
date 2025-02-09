@@ -103,5 +103,9 @@ func abortWithOrderError(c *gin.Context, err error) {
 		status = http.StatusNotFound
 	}
 
+	if errors.Is(err, domain.ErrInvalidStatusUpdate) || errors.Is(err, domain.ErrCompleteOrderUpdate) {
+		status = http.StatusBadRequest
+	}
+
 	c.AbortWithStatus(status)
 }

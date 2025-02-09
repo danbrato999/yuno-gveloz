@@ -19,3 +19,8 @@ type Order struct {
 func (o *Order) IsNewStatusValid(status OrderStatus) bool {
 	return statusWeights[o.Status] < statusWeights[status]
 }
+
+type OrderWithStatusHistory struct {
+	Order
+	StatusHistory []OrderStatusHistory `json:"status_history"`
+}
