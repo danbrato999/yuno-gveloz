@@ -1,9 +1,9 @@
 package gorm
 
 import (
-	"github.com/danbrato999/yuno-gveloz/internal/adapters/gorm/models"
-	"github.com/danbrato999/yuno-gveloz/internal/adapters/gorm/stores"
-	"github.com/danbrato999/yuno-gveloz/internal/domain"
+	"github.com/danbrato999/yuno-gveloz/domain"
+	"github.com/danbrato999/yuno-gveloz/internal/gorm/models"
+	"github.com/danbrato999/yuno-gveloz/internal/gorm/stores"
 	"gorm.io/gorm"
 )
 

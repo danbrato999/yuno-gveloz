@@ -3,9 +3,9 @@ package stores
 import (
 	"errors"
 
-	"github.com/danbrato999/yuno-gveloz/internal/adapters/gorm/mappers"
-	"github.com/danbrato999/yuno-gveloz/internal/adapters/gorm/models"
-	"github.com/danbrato999/yuno-gveloz/internal/domain"
+	"github.com/danbrato999/yuno-gveloz/domain"
+	"github.com/danbrato999/yuno-gveloz/internal/gorm/mappers"
+	"github.com/danbrato999/yuno-gveloz/internal/gorm/models"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

@@ -1,9 +1,9 @@
 package main
 
 import (
-	dbAdapter "github.com/danbrato999/yuno-gveloz/internal/adapters/gorm"
-	"github.com/danbrato999/yuno-gveloz/internal/domain"
+	"github.com/danbrato999/yuno-gveloz/domain"
 	"github.com/danbrato999/yuno-gveloz/internal/gin"
+	dbAdapter "github.com/danbrato999/yuno-gveloz/internal/gorm"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

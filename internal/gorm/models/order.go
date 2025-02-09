@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	"github.com/danbrato999/yuno-gveloz/internal/domain"
+	"github.com/danbrato999/yuno-gveloz/domain"
 	"gorm.io/gorm"
 )
 
