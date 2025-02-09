@@ -19,8 +19,7 @@ func GetServer(orderService *domain.OrderService) *gin.Engine {
 	orders.POST("", ordersHandler.Create)
 
 	orders.GET("/:id", ordersHandler.Find)
-	orders.PUT("/:id", ordersHandler.Update)
-	orders.DELETE("/:id", ordersHandler.Delete)
+	orders.PUT("/:id/status/:status", ordersHandler.UpdateStatus)
 
 	return router
 }

@@ -61,8 +61,9 @@ func (o *OrdersHandler) Find(c *gin.Context) {
 	c.JSON(http.StatusOK, order)
 }
 
-func (o *OrdersHandler) Update(c *gin.Context) {
+func (o *OrdersHandler) UpdateStatus(c *gin.Context) {
 	id := c.Param("id")
+	status := domain.OrderStatus(c.Param("status"))
 
 	orderID, err := strconv.Atoi(id)
 
@@ -71,33 +72,7 @@ func (o *OrdersHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var update domain.OrderUpdate
-
-	if err = c.BindJSON(&update); err != nil {
-		return
-	}
-
-	order, err := o.orderService.Update(uint(orderID), update)
-
-	if err != nil {
-		abortWithOrderError(c, err)
-		return
-	}
-
-	c.JSON(http.StatusOK, order)
-}
-
-func (o *OrdersHandler) Delete(c *gin.Context) {
-	id := c.Param("id")
-
-	orderID, err := strconv.Atoi(id)
-
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-
-	order, err := o.orderService.Cancel(uint(orderID))
+	order, err := o.orderService.UpdateStatus(uint(orderID), status)
 
 	if err != nil {
 		abortWithOrderError(c, err)

@@ -17,6 +17,14 @@ const OrderStatusReady OrderStatus = "ready"
 const OrderStatusDone OrderStatus = "done"
 const OrderStatusCancelled OrderStatus = "cancelled"
 
+var statusWeights = map[OrderStatus]uint{
+	OrderStatusPending:   10,
+	OrderStatusActive:    20,
+	OrderStatusReady:     30,
+	OrderStatusDone:      40,
+	OrderStatusCancelled: 40,
+}
+
 type OrderSource string
 
 const OrderSourceInPerson OrderSource = "in_person"
@@ -24,6 +32,8 @@ const OrderSourceDelivery OrderSource = "delivery"
 const OrderSourcePhone OrderSource = "phone"
 
 var ErrOrderNotFound = fmt.Errorf("Order not found")
+var ErrInvalidStatusUpdate = fmt.Errorf("Order cannot be updated to provided status")
+var ErrCompleteOrderUpdate = fmt.Errorf("Completed order cannot be updated")
 
 type NewOrder struct {
 	Time   time.Time   `json:"time" binding:"required"`
@@ -31,15 +41,14 @@ type NewOrder struct {
 	Source OrderSource `json:"source" binding:"oneof=in_person delivery phone"`
 }
 
-type OrderUpdate struct {
-	Dishes []Dish      `json:"dishes" binding:"required,min=1,dive"`
-	Status OrderStatus `json:"status" binding:"oneof=active ready done cancelled"`
+type Order struct {
+	ID     uint        `json:"id"`
+	Status OrderStatus `json:"status"`
+	NewOrder
 }
 
-type Order struct {
-	ID     uint
-	Status OrderStatus
-	NewOrder
+func (o *Order) IsNewStatusValid(status OrderStatus) bool {
+	return statusWeights[o.Status] < statusWeights[status]
 }
 
 type OrderStore interface {
@@ -85,7 +94,39 @@ func (s *OrderService) FindMany() ([]*Order, error) {
 	return s.store.GetAll()
 }
 
-func (s *OrderService) Update(id uint, request OrderUpdate) (*Order, error) {
+func (s *OrderService) UpdateStatus(id uint, status OrderStatus) (*Order, error) {
+	existing, err := s.findActiveOrder(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if !existing.IsNewStatusValid(status) {
+		return nil, ErrInvalidStatusUpdate
+	}
+
+	existing.Status = status
+
+	return s.store.Save(*existing)
+}
+
+// func (s *OrderService) Update(id uint, request OrderUpdate) (*Order, error) {
+// 	existing, err := s.FindByID(id)
+
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	if (existing.Status == OrderStatusDone || existing.Status == OrderStatusCancelled) && len(existing.Dishes) > 0 {
+// 		return nil, fmt.Errorf("Order contents cannot be updated")
+// 	}
+
+// 	existing.Dishes = request.Dishes
+// 	existing.Status = request.Status
+
+// 	return s.store.Save(*existing)
+// }
+
+func (s *OrderService) findActiveOrder(id uint) (*Order, error) {
 	existing, err := s.FindByID(id)
 
 	if err != nil {
@@ -93,23 +134,8 @@ func (s *OrderService) Update(id uint, request OrderUpdate) (*Order, error) {
 	}
 
 	if (existing.Status == OrderStatusDone || existing.Status == OrderStatusCancelled) && len(existing.Dishes) > 0 {
-		return nil, fmt.Errorf("Order contents cannot be updated")
+		return nil, ErrCompleteOrderUpdate
 	}
 
-	existing.Dishes = request.Dishes
-	existing.Status = request.Status
-
-	return s.store.Save(*existing)
-}
-
-func (s *OrderService) Cancel(id uint) (*Order, error) {
-	existing, err := s.FindByID(id)
-
-	if err != nil {
-		return nil, err
-	}
-
-	existing.Status = OrderStatusCancelled
-
-	return s.store.Save(*existing)
+	return existing, nil
 }
