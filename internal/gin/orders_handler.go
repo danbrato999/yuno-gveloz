@@ -1,6 +1,7 @@
 package gin
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -12,96 +13,105 @@ type OrdersHandler struct {
 	orderService *domain.OrderService
 }
 
-func (o *OrdersHandler) Create(context *gin.Context) {
+func (o *OrdersHandler) Create(c *gin.Context) {
 	var body domain.NewOrder
 
-	if err := context.BindJSON(&body); err != nil {
+	if err := c.BindJSON(&body); err != nil {
 		return
 	}
 
 	order, err := o.orderService.CreateOrder(body)
 
 	if err != nil {
-		context.AbortWithStatus(http.StatusInternalServerError)
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	context.JSON(http.StatusCreated, order)
+	c.JSON(http.StatusCreated, order)
 }
 
-func (o *OrdersHandler) List(context *gin.Context) {
+func (o *OrdersHandler) List(c *gin.Context) {
 	orders, err := o.orderService.FindMany()
 
 	if err != nil {
-		context.AbortWithStatus(http.StatusInternalServerError)
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	context.JSON(http.StatusOK, orders)
+	c.JSON(http.StatusOK, orders)
 }
 
-func (o *OrdersHandler) Find(context *gin.Context) {
-	id := context.Param("id")
+func (o *OrdersHandler) Find(c *gin.Context) {
+	id := c.Param("id")
 
 	orderID, err := strconv.Atoi(id)
 
 	if err != nil {
-		context.AbortWithStatus(http.StatusBadRequest)
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
 	order, err := o.orderService.FindByID(uint(orderID))
 
 	if err != nil {
-		context.AbortWithStatus(http.StatusInternalServerError)
+		abortWithOrderError(c, err)
 		return
 	}
 
-	context.JSON(http.StatusOK, order)
+	c.JSON(http.StatusOK, order)
 }
 
-func (o *OrdersHandler) Update(context *gin.Context) {
-	id := context.Param("id")
+func (o *OrdersHandler) Update(c *gin.Context) {
+	id := c.Param("id")
 
 	orderID, err := strconv.Atoi(id)
 
 	if err != nil {
-		context.AbortWithStatus(http.StatusBadRequest)
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
 	var update domain.OrderUpdate
 
-	if err = context.BindJSON(&update); err != nil {
+	if err = c.BindJSON(&update); err != nil {
 		return
 	}
 
 	order, err := o.orderService.Update(uint(orderID), update)
 
 	if err != nil {
-		context.AbortWithStatus(http.StatusInternalServerError)
+		abortWithOrderError(c, err)
 		return
 	}
 
-	context.JSON(http.StatusOK, order)
+	c.JSON(http.StatusOK, order)
 }
 
-func (o *OrdersHandler) Delete(context *gin.Context) {
-	id := context.Param("id")
+func (o *OrdersHandler) Delete(c *gin.Context) {
+	id := c.Param("id")
 
 	orderID, err := strconv.Atoi(id)
 
 	if err != nil {
-		context.AbortWithStatus(http.StatusBadRequest)
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
 	order, err := o.orderService.Cancel(uint(orderID))
 
 	if err != nil {
-		context.AbortWithStatus(http.StatusInternalServerError)
+		abortWithOrderError(c, err)
 		return
 	}
 
-	context.JSON(http.StatusOK, order)
+	c.JSON(http.StatusOK, order)
+}
+
+func abortWithOrderError(c *gin.Context, err error) {
+	status := http.StatusInternalServerError
+	if errors.Is(err, domain.ErrOrderNotFound) {
+		status = http.StatusNotFound
+	}
+
+	c.AbortWithStatus(status)
 }
