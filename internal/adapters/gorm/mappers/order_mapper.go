@@ -23,8 +23,9 @@ func OrderFromDB(order *models.Order) *domain.Order {
 		ID:     order.ID,
 		Status: order.Status,
 		NewOrder: domain.NewOrder{
-			Source: order.Source,
 			Dishes: dishes,
+			Source: order.Source,
+			Time:   *order.Time,
 		},
 	}
 }
@@ -39,9 +40,10 @@ func OrderToDB(order domain.Order) models.Order {
 	}
 
 	dbOrder := models.Order{
-		Status: order.Status,
-		Source: order.Source,
 		Dishes: dishes,
+		Source: order.Source,
+		Status: order.Status,
+		Time:   &order.Time,
 	}
 
 	if order.ID > 0 {

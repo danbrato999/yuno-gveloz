@@ -26,7 +26,7 @@ const OrderSourcePhone OrderSource = "phone"
 var ErrOrderNotFound = fmt.Errorf("Order not found")
 
 type NewOrder struct {
-	Time   *time.Time  `json:"time" binding:"-"`
+	Time   time.Time   `json:"time" binding:"required"`
 	Dishes []Dish      `json:"dishes" binding:"required,min=1,dive"`
 	Source OrderSource `json:"source" binding:"oneof=in_person delivery phone"`
 }

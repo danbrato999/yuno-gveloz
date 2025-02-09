@@ -7,6 +7,7 @@ import (
 	"github.com/danbrato999/yuno-gveloz/internal/adapters/gorm/models"
 	"github.com/danbrato999/yuno-gveloz/internal/domain"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type orderStore struct {
@@ -50,7 +51,17 @@ func (o *orderStore) GetAll() ([]*domain.Order, error) {
 func (o *orderStore) Save(order domain.Order) (*domain.Order, error) {
 	dbOrder := mappers.OrderToDB(order)
 
-	err := o.db.Save(&dbOrder).Error
+	err := o.db.Transaction(func(tx *gorm.DB) error {
+		if err2 := tx.Omit(clause.Associations).Save(&dbOrder).Error; err2 != nil {
+			return err2
+		}
+
+		if err2 := tx.Model(&dbOrder).Association("Dishes").Replace(dbOrder.Dishes); err2 != nil {
+			return err2
+		}
+
+		return nil
+	})
 
 	if err != nil {
 		return nil, err
