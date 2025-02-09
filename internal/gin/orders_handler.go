@@ -6,11 +6,12 @@ import (
 	"strconv"
 
 	"github.com/danbrato999/yuno-gveloz/domain"
+	"github.com/danbrato999/yuno-gveloz/domain/services"
 	"github.com/gin-gonic/gin"
 )
 
 type OrdersHandler struct {
-	orderService *domain.OrderService
+	orderService *services.OrderService
 }
 
 func (o *OrdersHandler) Create(c *gin.Context) {

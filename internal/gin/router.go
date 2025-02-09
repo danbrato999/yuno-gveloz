@@ -1,11 +1,11 @@
 package gin
 
 import (
-	"github.com/danbrato999/yuno-gveloz/domain"
+	"github.com/danbrato999/yuno-gveloz/domain/services"
 	"github.com/gin-gonic/gin"
 )
 
-func GetServer(orderService *domain.OrderService) *gin.Engine {
+func GetServer(orderService *services.OrderService) *gin.Engine {
 	ordersHandler := &OrdersHandler{
 		orderService: orderService,
 	}

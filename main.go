@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/danbrato999/yuno-gveloz/domain"
+	"github.com/danbrato999/yuno-gveloz/domain/services"
 	"github.com/danbrato999/yuno-gveloz/internal/gin"
 	dbAdapter "github.com/danbrato999/yuno-gveloz/internal/gorm"
 	"gorm.io/driver/sqlite"
@@ -23,7 +23,7 @@ func main() {
 	}
 
 	orderStore := dbAdapter.NewOrderStore(db)
-	orderService := domain.NewOrderService(orderStore)
+	orderService := services.NewOrderService(orderStore)
 
 	server := gin.GetServer(orderService)
 	server.Run(":9001")

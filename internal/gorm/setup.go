@@ -1,7 +1,7 @@
 package gorm
 
 import (
-	"github.com/danbrato999/yuno-gveloz/domain"
+	"github.com/danbrato999/yuno-gveloz/domain/services"
 	"github.com/danbrato999/yuno-gveloz/internal/gorm/models"
 	"github.com/danbrato999/yuno-gveloz/internal/gorm/stores"
 	"gorm.io/gorm"
@@ -16,6 +16,6 @@ func Migrate(db *gorm.DB) (err error) {
 	return
 }
 
-func NewOrderStore(db *gorm.DB) domain.OrderStore {
+func NewOrderStore(db *gorm.DB) services.OrderStore {
 	return stores.NewOrderStore(db)
 }
