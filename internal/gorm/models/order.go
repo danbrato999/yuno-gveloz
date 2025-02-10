@@ -12,5 +12,5 @@ type Order struct {
 	Status domain.OrderStatus
 	Source domain.OrderSource
 	Dishes []OrderDish
-	Time   *time.Time
+	Time   time.Time
 }

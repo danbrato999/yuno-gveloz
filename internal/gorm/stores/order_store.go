@@ -25,11 +25,16 @@ func (o *orderStore) FindByID(id uint) (*domain.Order, error) {
 
 	err := o.db.Preload("Dishes").First(&order, id).Error
 
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+
 		return nil, err
 	}
 
-	return OrderFromDB(&order), nil
+	result := OrderFromDB(order)
+	return &result, nil
 }
 
 func (o *orderStore) GetAll(filters *domain.OrderFilters) ([]domain.Order, error) {
@@ -48,7 +53,7 @@ func (o *orderStore) GetAll(filters *domain.OrderFilters) ([]domain.Order, error
 	results := make([]domain.Order, len(orders))
 
 	for i, order := range orders {
-		results[i] = *OrderFromDB(&order)
+		results[i] = OrderFromDB(order)
 	}
 
 	return results, nil
@@ -62,11 +67,11 @@ func (o *orderStore) Save(order domain.Order) (*domain.Order, error) {
 			return err2
 		}
 
-		if err2 := tx.Model(&dbOrder).Association("Dishes").Replace(dbOrder.Dishes); err2 != nil {
-			return err2
+		if len(dbOrder.Dishes) == 0 {
+			return nil
 		}
 
-		return nil
+		return tx.Model(&dbOrder).Association("Dishes").Replace(dbOrder.Dishes)
 	})
 
 	if err != nil {
@@ -77,11 +82,7 @@ func (o *orderStore) Save(order domain.Order) (*domain.Order, error) {
 	return &order, nil
 }
 
-func OrderFromDB(order *models.Order) *domain.Order {
-	if order == nil {
-		return nil
-	}
-
+func OrderFromDB(order models.Order) domain.Order {
 	dishes := make([]domain.Dish, len(order.Dishes))
 
 	for i, dish := range order.Dishes {
@@ -90,13 +91,13 @@ func OrderFromDB(order *models.Order) *domain.Order {
 		}
 	}
 
-	return &domain.Order{
+	return domain.Order{
 		ID:     order.ID,
 		Status: order.Status,
 		NewOrder: domain.NewOrder{
 			Dishes: dishes,
 			Source: order.Source,
-			Time:   *order.Time,
+			Time:   order.Time,
 		},
 	}
 }
@@ -114,7 +115,7 @@ func OrderToDB(order domain.Order) models.Order {
 		Dishes: dishes,
 		Source: order.Source,
 		Status: order.Status,
-		Time:   &order.Time,
+		Time:   order.Time,
 	}
 
 	if order.ID > 0 {
