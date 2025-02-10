@@ -1,23 +1,30 @@
 package services
 
-import . "github.com/danbrato999/yuno-gveloz/domain"
+import "github.com/danbrato999/yuno-gveloz/domain"
 
-type OrderService struct {
+type OrderService interface {
+	CreateOrder(request domain.NewOrder) (*domain.Order, error)
+	FindByID(id uint) (*domain.OrderWithStatusHistory, error)
+	FindMany(filters ...domain.OrderFilterFn) ([]domain.Order, error)
+	UpdateStatus(id uint, status domain.OrderStatus) (*domain.Order, error)
+}
+
+type orderServiceImpl struct {
 	orderStore  OrderStore
 	statusStore OrderStatusStore
 }
 
-func NewOrderService(store OrderStore, statusStore OrderStatusStore) *OrderService {
-	return &OrderService{
+func NewOrderService(store OrderStore, statusStore OrderStatusStore) OrderService {
+	return &orderServiceImpl{
 		orderStore:  store,
 		statusStore: statusStore,
 	}
 }
 
-func (s *OrderService) CreateOrder(request NewOrder) (*Order, error) {
-	order := Order{
+func (s *orderServiceImpl) CreateOrder(request domain.NewOrder) (*domain.Order, error) {
+	order := domain.Order{
 		NewOrder: request,
-		Status:   OrderStatusPending,
+		Status:   domain.OrderStatusPending,
 	}
 
 	result, err := s.orderStore.Save(order)
@@ -30,7 +37,7 @@ func (s *OrderService) CreateOrder(request NewOrder) (*Order, error) {
 	return result, nil
 }
 
-func (s *OrderService) FindByID(id uint) (*OrderWithStatusHistory, error) {
+func (s *orderServiceImpl) FindByID(id uint) (*domain.OrderWithStatusHistory, error) {
 	order, err := s.findByID(id)
 
 	if err != nil {
@@ -42,14 +49,14 @@ func (s *OrderService) FindByID(id uint) (*OrderWithStatusHistory, error) {
 		return nil, err
 	}
 
-	return &OrderWithStatusHistory{
+	return &domain.OrderWithStatusHistory{
 		Order:         *order,
 		StatusHistory: history,
 	}, nil
 }
 
-func (s *OrderService) FindMany(filters ...OrderFilterFn) ([]Order, error) {
-	orderFilters := &OrderFilters{}
+func (s *orderServiceImpl) FindMany(filters ...domain.OrderFilterFn) ([]domain.Order, error) {
+	orderFilters := &domain.OrderFilters{}
 
 	for _, filter := range filters {
 		filter(orderFilters)
@@ -58,14 +65,14 @@ func (s *OrderService) FindMany(filters ...OrderFilterFn) ([]Order, error) {
 	return s.orderStore.GetAll(orderFilters)
 }
 
-func (s *OrderService) UpdateStatus(id uint, status OrderStatus) (*Order, error) {
+func (s *orderServiceImpl) UpdateStatus(id uint, status domain.OrderStatus) (*domain.Order, error) {
 	existing, err := s.findActiveOrder(id)
 	if err != nil {
 		return nil, err
 	}
 
 	if !existing.IsNewStatusValid(status) {
-		return nil, ErrInvalidStatusUpdate
+		return nil, domain.ErrInvalidStatusUpdate
 	}
 
 	existing.Status = status
@@ -80,21 +87,21 @@ func (s *OrderService) UpdateStatus(id uint, status OrderStatus) (*Order, error)
 	return result, nil
 }
 
-func (s *OrderService) findActiveOrder(id uint) (*Order, error) {
+func (s *orderServiceImpl) findActiveOrder(id uint) (*domain.Order, error) {
 	existing, err := s.findByID(id)
 
 	if err != nil {
 		return nil, err
 	}
 
-	if existing.Status == OrderStatusDone || existing.Status == OrderStatusCancelled {
-		return nil, ErrCompleteOrderUpdate
+	if existing.Status == domain.OrderStatusDone || existing.Status == domain.OrderStatusCancelled {
+		return nil, domain.ErrCompleteOrderUpdate
 	}
 
 	return existing, nil
 }
 
-func (s *OrderService) findByID(id uint) (*Order, error) {
+func (s *orderServiceImpl) findByID(id uint) (*domain.Order, error) {
 	order, err := s.orderStore.FindByID(id)
 
 	if err != nil {
@@ -102,7 +109,7 @@ func (s *OrderService) findByID(id uint) (*Order, error) {
 	}
 
 	if order == nil {
-		return nil, ErrOrderNotFound
+		return nil, domain.ErrOrderNotFound
 	}
 
 	return order, nil

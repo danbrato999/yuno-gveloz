@@ -11,7 +11,13 @@ import (
 )
 
 type OrdersHandler struct {
-	orderService *services.OrderService
+	orderService services.OrderService
+}
+
+func NewOrdersHandler(orderService services.OrderService) *OrdersHandler {
+	return &OrdersHandler{
+		orderService: orderService,
+	}
 }
 
 func (o *OrdersHandler) Create(c *gin.Context) {

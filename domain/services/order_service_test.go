@@ -18,7 +18,7 @@ var _ = Describe("OrderService", func() {
 		mockCtrl        *gomock.Controller
 		mockOrderStore  *mocks.MockOrderStore
 		mockStatusStore *mocks.MockOrderStatusStore
-		orderService    *services.OrderService
+		orderService    services.OrderService
 	)
 
 	BeforeEach(func() {
