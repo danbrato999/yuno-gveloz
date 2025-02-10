@@ -4,22 +4,14 @@ import (
 	"github.com/danbrato999/yuno-gveloz/domain/services"
 	"github.com/danbrato999/yuno-gveloz/internal/gin"
 	dbAdapter "github.com/danbrato999/yuno-gveloz/internal/gorm"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
-func main() {
-	db, err := gorm.Open(sqlite.Open("main.db"), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
-	})
-	if err != nil {
-		panic("failed to connect database")
-	}
+const dbName = "main"
 
-	err = dbAdapter.Migrate(db)
+func main() {
+	db, err := dbAdapter.GetDBConnection(dbName)
 	if err != nil {
-		panic("failed to migrate database")
+		panic(err.Error())
 	}
 
 	orderStore := dbAdapter.NewOrderStore(db)

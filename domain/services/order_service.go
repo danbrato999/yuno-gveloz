@@ -87,7 +87,7 @@ func (s *OrderService) findActiveOrder(id uint) (*Order, error) {
 		return nil, err
 	}
 
-	if (existing.Status == OrderStatusDone || existing.Status == OrderStatusCancelled) && len(existing.Dishes) > 0 {
+	if existing.Status == OrderStatusDone || existing.Status == OrderStatusCancelled {
 		return nil, ErrCompleteOrderUpdate
 	}
 
