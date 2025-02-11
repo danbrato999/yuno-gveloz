@@ -1,6 +1,7 @@
 package stores_test
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/danbrato999/yuno-gveloz/domain"
@@ -79,6 +80,30 @@ var _ = Describe("OrderStore", func() {
 				Expect(orders).NotTo(BeEmpty())
 				Expect(orders).To(HaveLen(1))
 				Expect(orders[0].Dishes).NotTo(BeEmpty())
+			})
+		})
+
+		Context("when there are a lot of orders", func() {
+			const count = 40000
+			BeforeEach(func() {
+				for i := 0; i < count; i++ {
+					order := models.Order{
+						Status: domain.OrderStatusPending,
+						Source: domain.OrderSourcePhone,
+						Dishes: []models.OrderDish{
+							{Name: fmt.Sprintf("dish-%d", i)},
+						},
+					}
+
+					Expect(testDB.Save(&order).Error).To(Succeed())
+				}
+			})
+
+			It("returns all orders", func() {
+				orders, err := store.GetAll(nil)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(orders).NotTo(BeEmpty())
+				Expect(len(orders)).To(Equal(count + 1))
 			})
 		})
 

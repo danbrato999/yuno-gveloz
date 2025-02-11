@@ -38,15 +38,21 @@ func (o *orderStore) FindByID(id uint) (*domain.Order, error) {
 }
 
 func (o *orderStore) GetAll(filters *domain.OrderFilters) ([]domain.Order, error) {
-	var orders []models.Order
+	var (
+		orders []models.Order
+		batch  []models.Order
+	)
 
-	tx := o.db.Table("orders").Preload("Dishes")
+	query := o.db.Table("orders").Preload("Dishes")
 
 	if filters != nil && len(filters.AnyStatus) > 0 {
-		tx.Where("status in (?)", filters.AnyStatus)
+		query.Where("status in (?)", filters.AnyStatus)
 	}
 
-	if err := tx.Find(&orders).Error; err != nil {
+	if err := query.FindInBatches(&batch, 10000, func(tx2 *gorm.DB, batchSize int) error {
+		orders = append(orders, batch...)
+		return nil
+	}).Error; err != nil {
 		return nil, err
 	}
 
