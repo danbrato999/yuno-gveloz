@@ -1,5 +1,6 @@
 *.swp
 *.db
+data/
 
 # Coverage files
 *.out

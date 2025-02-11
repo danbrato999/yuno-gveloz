@@ -3,6 +3,7 @@ package gorm
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/danbrato999/yuno-gveloz/domain/services"
 	"github.com/danbrato999/yuno-gveloz/internal/gorm/models"
@@ -27,7 +28,7 @@ func GetDBConnection(dbName string) (*gorm.DB, error) {
 		return nil, fmt.Errorf("error creating db folder: %w", err)
 	}
 
-	dbFile := fmt.Sprintf("%s/%s.db", DbFolder, dbName)
+	dbFile := fmt.Sprintf("%s/%s.db?_journal_mode=WAL", DbFolder, dbName)
 
 	db, err := gorm.Open(sqlite.Open(dbFile), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
@@ -39,6 +40,16 @@ func GetDBConnection(dbName string) (*gorm.DB, error) {
 	if err = migrate(db); err != nil {
 		return nil, fmt.Errorf("failed to migrate database: %w", err)
 	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get database handle: %w", err)
+	}
+
+	// Set connection pool limits
+	sqlDB.SetMaxOpenConns(1)                  // Max number of open connections
+	sqlDB.SetMaxIdleConns(2)                  // Max number of idle connections
+	sqlDB.SetConnMaxLifetime(time.Minute * 5) // Reuse connections for 5 minutes
 
 	return db, nil
 }
