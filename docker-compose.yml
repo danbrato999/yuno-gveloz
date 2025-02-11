@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgres
+    restart: always
+    # set shared memory limit when using docker-compose
+    shm_size: 128mb
+    environment:
+      POSTGRES_PASSWORD: example
+    ports:
+      - 5432:5432
+
+  yuno:
+    image: yuno-gveloz
+    build: .
+    restart: always
+    environment:
+      GIN_MODE: release
+      POSTGRES_DSN: "host=db user=postgres password=example dbname=postgres port=5432 sslmode=disable"
+    ports:
+      - 9001:9001
+    depends_on:
+      - db

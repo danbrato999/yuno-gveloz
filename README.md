@@ -13,16 +13,29 @@ architecture approach with the following structure:
 frameworks codebase (other than relying on gin's default validator)
 - *internal/gin*: Code related to gin routing and endpoint handling
 - *internal/gorm*: Code related to gorm data models and implementations of the data store
-interfaces required in the domain's logic
+interfaces required in the domain's logic.
 
-To keep running the service simple, _sqlite_ is currently the default database.
-To run the server, simply clone the project locally and run:
+The current implementation requires a _postgres_ database to run. The easiest way to run
+the server locally is using *Docker compose* with the following command:
+
+```
+$ docker compose up
+```
+>> This will run a postgres instance and expose it locally on port 5432, as well as build
+an image with the server, run it and expose it locally on port 9001
+ 
+If you wanna run the server locally, you can use compose to provide only the postgres
+database with
+
+```
+$ docker compose start db
+```
+
+Then you can run the server with
 
 ```
 $ go run main.go
 ```
-
-This should create an sqlite db file, run the migrations and start the server on port *9001*.
 
 There is a comprehensible set of unit tests in the project, written with ginkgo+gomega. To
 run the tests, you can use one of the two commands:

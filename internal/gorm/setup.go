@@ -8,12 +8,9 @@ import (
 	"github.com/danbrato999/yuno-gveloz/domain/services"
 	"github.com/danbrato999/yuno-gveloz/internal/gorm/models"
 	"github.com/danbrato999/yuno-gveloz/internal/gorm/stores"
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
-
-const DbFolder = "data"
 
 func migrate(db *gorm.DB) error {
 	return db.AutoMigrate(
@@ -25,15 +22,14 @@ func migrate(db *gorm.DB) error {
 }
 
 func GetDBConnection(dbName string) (*gorm.DB, error) {
-	if err := os.MkdirAll(DbFolder, os.ModePerm); err != nil {
-		return nil, fmt.Errorf("error creating db folder: %w", err)
+	dsn := os.Getenv("POSTGRES_DSN")
+
+	if dsn == "" {
+		// Assume we're running locally and postgres is run with docker compose
+		dsn = "host=localhost user=postgres password=example dbname=postgres port=5432 sslmode=disable"
 	}
 
-	dbFile := fmt.Sprintf("%s/%s.db?_journal_mode=WAL", DbFolder, dbName)
-
-	db, err := gorm.Open(sqlite.Open(dbFile), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
-	})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect database: %w", err)
 	}
@@ -48,8 +44,8 @@ func GetDBConnection(dbName string) (*gorm.DB, error) {
 	}
 
 	// Set connection pool limits
-	sqlDB.SetMaxOpenConns(1)                  // Max number of open connections
-	sqlDB.SetMaxIdleConns(2)                  // Max number of idle connections
+	sqlDB.SetMaxOpenConns(20)                 // Max number of open connections
+	sqlDB.SetMaxIdleConns(10)                 // Max number of idle connections
 	sqlDB.SetConnMaxLifetime(time.Minute * 5) // Reuse connections for 5 minutes
 
 	return db, nil
