@@ -11,14 +11,16 @@ type OrderService interface {
 }
 
 type orderServiceImpl struct {
-	orderStore  OrderStore
-	statusStore OrderStatusStore
+	orderStore    OrderStore
+	statusStore   OrderStatusStore
+	priorityQueue PriorityQueue
 }
 
-func NewOrderService(store OrderStore, statusStore OrderStatusStore) OrderService {
+func NewOrderService(store OrderStore, priorityQueue PriorityQueue, statusStore OrderStatusStore) OrderService {
 	return &orderServiceImpl{
-		orderStore:  store,
-		statusStore: statusStore,
+		orderStore:    store,
+		priorityQueue: priorityQueue,
+		statusStore:   statusStore,
 	}
 }
 
@@ -34,6 +36,7 @@ func (s *orderServiceImpl) CreateOrder(request domain.NewOrder) (*domain.Order, 
 	}
 
 	go s.statusStore.AddCurrentStatus(result)
+	go s.priorityQueue.Add(result)
 
 	return result, nil
 }
@@ -84,6 +87,10 @@ func (s *orderServiceImpl) UpdateStatus(id uint, status domain.OrderStatus) (*do
 	}
 
 	go s.statusStore.AddCurrentStatus(result)
+
+	if status == domain.OrderStatusDone || status == domain.OrderStatusCancelled {
+		go s.priorityQueue.Remove(id)
+	}
 
 	return result, nil
 }

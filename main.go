@@ -16,7 +16,8 @@ func main() {
 
 	orderStore := dbAdapter.NewOrderStore(db)
 	orderStatusStore := dbAdapter.NewOrderStatusStore(db)
-	orderService := services.NewOrderService(orderStore, orderStatusStore)
+	priorityQueue := dbAdapter.NewOrderPriorityStore(db)
+	orderService := services.NewOrderService(orderStore, priorityQueue, orderStatusStore)
 
 	server := gin.GetServer(orderService)
 	server.Run(":9001")

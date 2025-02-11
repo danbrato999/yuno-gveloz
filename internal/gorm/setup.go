@@ -19,6 +19,7 @@ func migrate(db *gorm.DB) error {
 	return db.AutoMigrate(
 		&models.Order{},
 		&models.OrderDish{},
+		&models.OrderPosition{},
 		&models.OrderStatus{},
 	)
 }
@@ -56,6 +57,10 @@ func GetDBConnection(dbName string) (*gorm.DB, error) {
 
 func NewOrderStore(db *gorm.DB) services.OrderStore {
 	return stores.NewOrderStore(db)
+}
+
+func NewOrderPriorityStore(db *gorm.DB) services.PriorityQueue {
+	return stores.NewOrderPositionStore(db)
 }
 
 func NewOrderStatusStore(db *gorm.DB) services.OrderStatusStore {

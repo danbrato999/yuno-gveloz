@@ -15,17 +15,18 @@ import (
 
 var _ = Describe("OrderService", func() {
 	var (
-		mockCtrl        *gomock.Controller
-		mockOrderStore  *mocks.MockOrderStore
-		mockStatusStore *mocks.MockOrderStatusStore
-		orderService    services.OrderService
+		mockOrderStore    *mocks.MockOrderStore
+		mockStatusStore   *mocks.MockOrderStatusStore
+		mockPriorityQueue *mocks.MockPriorityQueue
+		orderService      services.OrderService
 	)
 
 	BeforeEach(func() {
-		mockCtrl = gomock.NewController(GinkgoT())
+		mockCtrl := gomock.NewController(GinkgoT())
 		mockOrderStore = mocks.NewMockOrderStore(mockCtrl)
+		mockPriorityQueue = mocks.NewMockPriorityQueue(mockCtrl)
 		mockStatusStore = mocks.NewMockOrderStatusStore(mockCtrl)
-		orderService = services.NewOrderService(mockOrderStore, mockStatusStore)
+		orderService = services.NewOrderService(mockOrderStore, mockPriorityQueue, mockStatusStore)
 	})
 
 	Context("CreateOrder", func() {
@@ -43,8 +44,11 @@ var _ = Describe("OrderService", func() {
 			mockOrderStore.EXPECT().Save(gomock.Any()).Return(savedOrder, nil)
 
 			var wg sync.WaitGroup
-			wg.Add(1)
+			wg.Add(2)
 			mockStatusStore.EXPECT().AddCurrentStatus(savedOrder).Do(func(o *domain.Order) {
+				wg.Done()
+			})
+			mockPriorityQueue.EXPECT().Add(savedOrder).Do(func(o *domain.Order) {
 				wg.Done()
 			})
 
@@ -164,6 +168,30 @@ var _ = Describe("OrderService", func() {
 
 			Expect(result).To(BeNil())
 			Expect(err).To(Equal(domain.ErrInvalidOrderUpdate))
+		})
+
+		It("should remove order from queue when cancelled", func() {
+			order := &domain.Order{ID: 1, Status: domain.OrderStatusPending}
+
+			mockOrderStore.EXPECT().FindByID(uint(1)).Return(order, nil)
+			mockOrderStore.EXPECT().Save(gomock.Any()).Return(order, nil)
+
+			var wg sync.WaitGroup
+			wg.Add(2)
+			mockStatusStore.EXPECT().AddCurrentStatus(order).Do(func(o *domain.Order) {
+				wg.Done()
+			})
+			mockPriorityQueue.EXPECT().Remove(order.ID).Do(func(id uint) {
+				wg.Done()
+			})
+
+			updatedOrder, err := orderService.UpdateStatus(1, domain.OrderStatusCancelled)
+
+			Expect(err).To(BeNil())
+			Expect(updatedOrder).NotTo(BeNil())
+			Expect(updatedOrder.Status).To(Equal(domain.OrderStatusCancelled))
+
+			wg.Wait()
 		})
 	})
 

@@ -56,3 +56,9 @@ $ k6 run k6/index.js
 - Store the history of statuses for a particular order
 - Cancel an order
 
+### TODO
+
+- Priority queue
+  - Add manual re sorting
+- Handle exact duplicates
+

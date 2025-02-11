@@ -45,8 +45,14 @@ func (o *orderStore) GetAll(filters *domain.OrderFilters) ([]domain.Order, error
 
 	query := o.db.Table("orders").Preload("Dishes")
 
-	if filters != nil && len(filters.AnyStatus) > 0 {
-		query.Where("status in (?)", filters.AnyStatus)
+	if filters != nil {
+		if len(filters.AnyStatus) > 0 {
+			query.Where("status in (?)", filters.AnyStatus)
+		}
+
+		if filters.PrioritySort {
+			query.Joins("LEFT JOIN order_positions op ON op.order_id = orders.id").Order("op.position")
+		}
 	}
 
 	if err := query.FindInBatches(&batch, 10000, func(tx2 *gorm.DB, batchSize int) error {

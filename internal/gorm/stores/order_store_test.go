@@ -27,7 +27,7 @@ var _ = Describe("OrderStore", func() {
 		Expect(testDB).NotTo(BeNil())
 		Expect(err).NotTo(HaveOccurred())
 
-		err = testDB.AutoMigrate(&models.Order{}, &models.OrderDish{})
+		err = testDB.AutoMigrate(&models.Order{}, &models.OrderDish{}, &models.OrderPosition{})
 		Expect(err).NotTo(HaveOccurred())
 
 		store = stores.NewOrderStore(testDB)
@@ -49,7 +49,7 @@ var _ = Describe("OrderStore", func() {
 	})
 
 	Describe("FindByID", func() {
-		Context("when the order exists", func() {
+		When("the order exists", func() {
 			It("returns the order", func() {
 				order, err := store.FindByID(existingOrderID)
 				Expect(err).NotTo(HaveOccurred())
@@ -63,7 +63,7 @@ var _ = Describe("OrderStore", func() {
 			})
 		})
 
-		Context("when the order does not exist", func() {
+		When("the order does not exist", func() {
 			It("returns nil and no error", func() {
 				order, err := store.FindByID(999)
 				Expect(err).NotTo(HaveOccurred())
@@ -73,7 +73,7 @@ var _ = Describe("OrderStore", func() {
 	})
 
 	Describe("GetAll", func() {
-		Context("when there are orders", func() {
+		When("there are orders", func() {
 			It("returns all orders", func() {
 				orders, err := store.GetAll(nil)
 				Expect(err).NotTo(HaveOccurred())
@@ -83,7 +83,7 @@ var _ = Describe("OrderStore", func() {
 			})
 		})
 
-		Context("when there are a lot of orders", func() {
+		When("there are a lot of orders", func() {
 			const count = 40000
 			BeforeEach(func() {
 				for i := 0; i < count; i++ {
@@ -107,7 +107,7 @@ var _ = Describe("OrderStore", func() {
 			})
 		})
 
-		Context("when filtering by status", func() {
+		When("filtering by status", func() {
 			It("returns only matching orders", func() {
 				filters := &domain.OrderFilters{AnyStatus: []domain.OrderStatus{domain.OrderStatusPending}}
 				orders, err := store.GetAll(filters)
@@ -117,7 +117,48 @@ var _ = Describe("OrderStore", func() {
 			})
 		})
 
-		Context("when no orders match the filter", func() {
+		When("ordering by priority", func() {
+			var positions []models.OrderPosition
+
+			BeforeEach(func() {
+				orders := make([]domain.Order, 3)
+
+				for i := 0; i < 3; i++ {
+					order := models.Order{
+						Dishes: []models.OrderDish{
+							{Name: fmt.Sprintf("dish-%d", i)},
+						},
+						Source: domain.OrderSourcePhone,
+						Status: domain.OrderStatusPending,
+						Time:   time.Now(),
+					}
+
+					Expect(testDB.Save(&order).Error).ToNot(HaveOccurred())
+					orders[i] = domain.Order{ID: order.ID}
+				}
+
+				positions = []models.OrderPosition{
+					{OrderID: orders[1].ID, Position: 1},
+					{OrderID: orders[2].ID, Position: 2},
+					{OrderID: existingOrderID, Position: 3},
+					{OrderID: orders[0].ID, Position: 4},
+				}
+
+				Expect(testDB.Create(&positions).Error).ToNot(HaveOccurred())
+			})
+
+			It("should return orders in the right order", func() {
+				result, err := store.GetAll(&domain.OrderFilters{PrioritySort: true})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).To(HaveLen(4))
+
+				for i, pos := range positions {
+					Expect(result[i].ID).To(Equal(pos.OrderID))
+				}
+			})
+		})
+
+		When("no orders match the filter", func() {
 			It("returns an empty list", func() {
 				filters := &domain.OrderFilters{AnyStatus: []domain.OrderStatus{domain.OrderStatusDone}}
 				orders, err := store.GetAll(filters)
@@ -128,7 +169,7 @@ var _ = Describe("OrderStore", func() {
 	})
 
 	Describe("Save", func() {
-		Context("when saving a new order", func() {
+		When("saving a new order", func() {
 			It("persists the order", func() {
 				newOrder := domain.Order{
 					NewOrder: domain.NewOrder{
@@ -150,7 +191,7 @@ var _ = Describe("OrderStore", func() {
 			})
 		})
 
-		Context("when updating an existing order", func() {
+		When("updating an existing order", func() {
 			It("updates the order main attributes", func() {
 				testOrder, err := store.FindByID(existingOrderID)
 				Expect(err).NotTo(HaveOccurred())
