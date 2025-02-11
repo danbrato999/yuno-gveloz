@@ -142,4 +142,76 @@ var _ = Describe("OrderPriorityStore", func() {
 			}))
 		})
 	})
+
+	Describe("ShuffleAfter", func() {
+		It("should move an order forward in the queue", func() {
+			err := store.ShuffleAfter(orderQueue[0].ID, orderQueue[1].ID)
+			Expect(err).ToNot(HaveOccurred())
+
+			var positions []models.OrderPosition
+			err = testDB.Order("position").Find(&positions).Error
+			Expect(err).ToNot(HaveOccurred())
+			Expect(positions).To(Equal([]models.OrderPosition{
+				{OrderID: orderQueue[1].ID, Position: 1},
+				{OrderID: orderQueue[0].ID, Position: 2},
+				{OrderID: orderQueue[2].ID, Position: 3},
+			}))
+		})
+
+		It("should move an order backward in the queue", func() {
+			err := store.ShuffleAfter(orderQueue[2].ID, orderQueue[0].ID)
+			Expect(err).ToNot(HaveOccurred())
+
+			var positions []models.OrderPosition
+			err = testDB.Order("position").Find(&positions).Error
+			Expect(err).ToNot(HaveOccurred())
+			Expect(positions).To(Equal([]models.OrderPosition{
+				{OrderID: orderQueue[0].ID, Position: 1},
+				{OrderID: orderQueue[2].ID, Position: 2},
+				{OrderID: orderQueue[1].ID, Position: 3},
+			}))
+		})
+
+		It("should not change order if already in correct place", func() {
+			err := store.ShuffleAfter(orderQueue[1].ID, orderQueue[0].ID)
+			Expect(err).ToNot(HaveOccurred())
+
+			var positions []models.OrderPosition
+			err = testDB.Order("position").Find(&positions).Error
+			Expect(err).ToNot(HaveOccurred())
+			Expect(positions).To(Equal([]models.OrderPosition{
+				{OrderID: orderQueue[0].ID, Position: 1},
+				{OrderID: orderQueue[1].ID, Position: 2},
+				{OrderID: orderQueue[2].ID, Position: 3},
+			}))
+		})
+
+		It("should do nothing if one of the orders does not exist", func() {
+			err := store.ShuffleAfter(uint(999), orderQueue[0].ID)
+			Expect(err).ToNot(HaveOccurred())
+
+			var positions []models.OrderPosition
+			err = testDB.Order("position").Find(&positions).Error
+			Expect(err).ToNot(HaveOccurred())
+			Expect(positions).To(Equal([]models.OrderPosition{
+				{OrderID: orderQueue[0].ID, Position: 1},
+				{OrderID: orderQueue[1].ID, Position: 2},
+				{OrderID: orderQueue[2].ID, Position: 3},
+			}))
+		})
+
+		It("should do nothing if both orders do not exist", func() {
+			err := store.ShuffleAfter(uint(999), uint(888))
+			Expect(err).ToNot(HaveOccurred())
+
+			var positions []models.OrderPosition
+			err = testDB.Order("position").Find(&positions).Error
+			Expect(err).ToNot(HaveOccurred())
+			Expect(positions).To(Equal([]models.OrderPosition{
+				{OrderID: orderQueue[0].ID, Position: 1},
+				{OrderID: orderQueue[1].ID, Position: 2},
+				{OrderID: orderQueue[2].ID, Position: 3},
+			}))
+		})
+	})
 })

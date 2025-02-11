@@ -54,11 +54,10 @@ $ k6 run k6/index.js
 - Update an order's status
 - Update an order's list of dishes
 - Store the history of statuses for a particular order
+- VIP Prioritization with custom order sorting
 - Cancel an order
 
 ### TODO
 
-- Priority queue
-  - Add manual re sorting
 - Handle exact duplicates
 

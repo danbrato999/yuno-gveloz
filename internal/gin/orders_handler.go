@@ -129,6 +129,31 @@ func (o *OrdersHandler) UpdateContent(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
+func (o *OrdersHandler) Prioritize(c *gin.Context) {
+	id := c.Param("id")
+	orderID, err := strconv.Atoi(id)
+
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	var body struct {
+		AfterID uint `json:"after_id" binding:"required"`
+	}
+
+	if err := c.BindJSON(&body); err != nil {
+		return
+	}
+
+	if err := o.orderService.Prioritize(uint(orderID), body.AfterID); err != nil {
+		abortWithOrderError(c, err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
 func abortWithOrderError(c *gin.Context, err error) {
 	status := http.StatusInternalServerError
 	if errors.Is(err, domain.ErrOrderNotFound) {

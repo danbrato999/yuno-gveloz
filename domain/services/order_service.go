@@ -8,6 +8,7 @@ type OrderService interface {
 	FindMany(filters ...domain.OrderFilterFn) ([]domain.Order, error)
 	UpdateStatus(id uint, status domain.OrderStatus) (*domain.Order, error)
 	UpdateDishes(id uint, dishes []domain.Dish) (*domain.Order, error)
+	Prioritize(id uint, afterID uint) error
 }
 
 type orderServiceImpl struct {
@@ -112,6 +113,10 @@ func (s *orderServiceImpl) UpdateDishes(id uint, dishes []domain.Dish) (*domain.
 	existing.Dishes = dishes
 
 	return s.orderStore.Save(*existing)
+}
+
+func (s *orderServiceImpl) Prioritize(id uint, afterID uint) error {
+	return s.priorityQueue.ShuffleAfter(id, afterID)
 }
 
 func (s *orderServiceImpl) findActiveOrder(id uint) (*domain.Order, error) {

@@ -170,6 +170,35 @@ paths:
           description: Order not found
         '500':
           description: Internal error
+
+  /v1/orders/{id}/prioritize:
+    put:
+      tags:
+        - orders
+      summary: Shuffles an order's priority
+      parameters:
+        - name: id
+          in: path
+          description: ID of order to return
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        description: Data to prioritize
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                after_id:
+                  type: integer
+                  required: true
+        required: true
+      responses:
+        '204':
+          description: Priority updated
+        '500':
+          description: Internal error
 components:
   schemas:
     Dish:

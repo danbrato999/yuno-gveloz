@@ -89,6 +89,20 @@ func (mr *MockOrderServiceMockRecorder) FindMany(filters ...any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMany", reflect.TypeOf((*MockOrderService)(nil).FindMany), filters...)
 }
 
+// Prioritize mocks base method.
+func (m *MockOrderService) Prioritize(id, afterID uint) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Prioritize", id, afterID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Prioritize indicates an expected call of Prioritize.
+func (mr *MockOrderServiceMockRecorder) Prioritize(id, afterID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Prioritize", reflect.TypeOf((*MockOrderService)(nil).Prioritize), id, afterID)
+}
+
 // UpdateDishes mocks base method.
 func (m *MockOrderService) UpdateDishes(id uint, dishes []domain.Dish) (*domain.Order, error) {
 	m.ctrl.T.Helper()

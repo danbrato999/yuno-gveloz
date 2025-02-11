@@ -47,7 +47,50 @@ func (o *OrderPositionStore) Add(order *domain.Order) error {
 }
 
 func (o *OrderPositionStore) ShuffleAfter(id, targetID uint) error {
-	return nil
+	var positions []models.OrderPosition
+
+	return o.db.Transaction(func(tx *gorm.DB) error {
+		err := tx.Where("order_id IN (?, ?)", id, targetID).Find(&positions).Error
+
+		if err != nil {
+			return err
+		}
+
+		// Any of the orders have no priority do nothing
+		if len(positions) < 2 {
+			return nil
+		}
+
+		currentPos := positions[0].Position
+		targetPos := positions[1].Position
+
+		// In case the order gets messed up
+		if positions[0].OrderID != id {
+			currentPos = positions[1].Position
+			targetPos = positions[0].Position
+		}
+
+		// We want to add afterwards, not replace
+		targetPos++
+
+		if currentPos == targetPos {
+			return nil
+		}
+
+		if currentPos > targetPos {
+			err = tx.Exec("update order_positions set position = position + 1 where position >= ? AND position < ?", targetPos, currentPos).Error
+
+		} else {
+			err = tx.Exec("update order_positions set position = position - 1 where position > ? AND position < ?", currentPos, targetPos).Error
+			targetPos--
+		}
+
+		if err != nil {
+			return err
+		}
+
+		return tx.Exec("update order_positions set position = ? where order_id = ?", targetPos, id).Error
+	})
 }
 
 func (o *OrderPositionStore) Remove(id uint) error {

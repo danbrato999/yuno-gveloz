@@ -14,6 +14,7 @@ func addOrderRoutes(ordersHandler *OrdersHandler, api *gin.RouterGroup) {
 	order.GET("", ordersHandler.Find)
 	order.PUT("", ordersHandler.UpdateContent)
 	order.PUT("/status/:status", ordersHandler.UpdateStatus)
+	order.PUT("/prioritize", ordersHandler.Prioritize)
 }
 
 func GetServer(orderService services.OrderService) *gin.Engine {

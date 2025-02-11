@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"time"
@@ -224,6 +225,40 @@ var _ = Describe("OrdersHandler", func() {
 
 			It("should return 400 Bad Request", func() {
 				Expect(recorder.Code).To(Equal(http.StatusBadRequest))
+			})
+		})
+	})
+
+	Describe("Prioritize Order", func() {
+		var (
+			afterID uint = 2
+			orderID uint = 1
+		)
+
+		JustBeforeEach(func() {
+			body, _ := json.Marshal(map[string]any{"after_id": afterID})
+			req, _ := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/%d/prioritize", baseAPIUri, orderID), bytes.NewBuffer(body))
+			req.Header.Set("Content-Type", "application/json")
+			router.ServeHTTP(recorder, req)
+		})
+
+		When("the request is valid", func() {
+			BeforeEach(func() {
+				mockService.EXPECT().Prioritize(orderID, afterID).Return(nil)
+			})
+
+			It("should return 204 No Content", func() {
+				Expect(recorder.Code).To(Equal(http.StatusNoContent))
+			})
+		})
+
+		When("service returns an error", func() {
+			BeforeEach(func() {
+				mockService.EXPECT().Prioritize(orderID, afterID).Return(errors.New("error"))
+			})
+
+			It("should return 500 Internal Server Error", func() {
+				Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
 			})
 		})
 	})
