@@ -24,6 +24,27 @@ $ go run main.go
 
 This should create an sqlite db file, run the migrations and start the server on port *9001*.
 
+There is a comprehensible set of unit tests in the project, written with ginkgo+gomega. To
+run the tests, you can use one of the two commands:
+
+```
+$ go test ./...
+```
+
+If you have ginkgo installed locally, you can also use:
+
+```
+$ ginkgo -r
+```
+
+There are also a couple of basic load tests created with [k6](https://k6.io/). To run them,
+you need to install k6 locally, start the server and run each test with:
+
+```
+$ k6 run k6/create.js
+$ k6 run k6/index.js
+```
+
 ### Covered use cases
 
 - Create a new order
@@ -31,6 +52,7 @@ This should create an sqlite db file, run the migrations and start the server on
 - Get the list of active orders
 - Get a single order's details
 - Update an order's status
+- Update an order's list of dishes
 - Store the history of statuses for a particular order
 - Cancel an order
 
