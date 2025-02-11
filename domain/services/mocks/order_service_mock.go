@@ -89,6 +89,21 @@ func (mr *MockOrderServiceMockRecorder) FindMany(filters ...any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMany", reflect.TypeOf((*MockOrderService)(nil).FindMany), filters...)
 }
 
+// UpdateDishes mocks base method.
+func (m *MockOrderService) UpdateDishes(id uint, dishes []domain.Dish) (*domain.Order, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateDishes", id, dishes)
+	ret0, _ := ret[0].(*domain.Order)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateDishes indicates an expected call of UpdateDishes.
+func (mr *MockOrderServiceMockRecorder) UpdateDishes(id, dishes any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDishes", reflect.TypeOf((*MockOrderService)(nil).UpdateDishes), id, dishes)
+}
+
 // UpdateStatus mocks base method.
 func (m *MockOrderService) UpdateStatus(id uint, status domain.OrderStatus) (*domain.Order, error) {
 	m.ctrl.T.Helper()

@@ -99,6 +99,41 @@ paths:
           description: Order not found
         '500':
           description: Internal error
+    put:
+      tags:
+        - orders
+      summary: Updates an order's content
+      parameters:
+        - name: id
+          in: path
+          description: ID of order to return
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        description: Updated order body
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dishes:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Dish'
+      responses:
+        '200':
+          description: Order updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Invalid input
+        '500':
+          description: Internal error
+
   /v1/orders/{id}/status/{status}:
     put:
       tags:

@@ -103,13 +103,39 @@ func (o *OrdersHandler) UpdateStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, order)
 }
 
+func (o *OrdersHandler) UpdateContent(c *gin.Context) {
+	id := c.Param("id")
+	orderID, err := strconv.Atoi(id)
+
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	var body struct {
+		Dishes []domain.Dish `json:"dishes" binding:"required,min=1,dive"`
+	}
+
+	if err := c.BindJSON(&body); err != nil {
+		return
+	}
+
+	result, err := o.orderService.UpdateDishes(uint(orderID), body.Dishes)
+	if err != nil {
+		abortWithOrderError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
 func abortWithOrderError(c *gin.Context, err error) {
 	status := http.StatusInternalServerError
 	if errors.Is(err, domain.ErrOrderNotFound) {
 		status = http.StatusNotFound
 	}
 
-	if errors.Is(err, domain.ErrInvalidStatusUpdate) || errors.Is(err, domain.ErrCompleteOrderUpdate) {
+	if errors.Is(err, domain.ErrInvalidOrderUpdate) || errors.Is(err, domain.ErrCompleteOrderUpdate) {
 		status = http.StatusBadRequest
 	}
 

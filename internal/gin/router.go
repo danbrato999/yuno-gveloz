@@ -10,8 +10,10 @@ func addOrderRoutes(ordersHandler *OrdersHandler, api *gin.RouterGroup) {
 	orders.GET("", ordersHandler.List)
 	orders.POST("", ordersHandler.Create)
 
-	orders.GET("/:id", ordersHandler.Find)
-	orders.PUT("/:id/status/:status", ordersHandler.UpdateStatus)
+	order := orders.Group("/:id")
+	order.GET("", ordersHandler.Find)
+	order.PUT("", ordersHandler.UpdateContent)
+	order.PUT("/status/:status", ordersHandler.UpdateStatus)
 }
 
 func GetServer(orderService services.OrderService) *gin.Engine {

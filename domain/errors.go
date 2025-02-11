@@ -3,5 +3,5 @@ package domain
 import "fmt"
 
 var ErrOrderNotFound = fmt.Errorf("Order not found")
-var ErrInvalidStatusUpdate = fmt.Errorf("Order cannot be updated to provided status")
+var ErrInvalidOrderUpdate = fmt.Errorf("Order updated is incorrect")
 var ErrCompleteOrderUpdate = fmt.Errorf("Completed order cannot be updated")

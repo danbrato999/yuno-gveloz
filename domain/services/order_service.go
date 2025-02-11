@@ -7,6 +7,7 @@ type OrderService interface {
 	FindByID(id uint) (*domain.OrderWithStatusHistory, error)
 	FindMany(filters ...domain.OrderFilterFn) ([]domain.Order, error)
 	UpdateStatus(id uint, status domain.OrderStatus) (*domain.Order, error)
+	UpdateDishes(id uint, dishes []domain.Dish) (*domain.Order, error)
 }
 
 type orderServiceImpl struct {
@@ -72,7 +73,7 @@ func (s *orderServiceImpl) UpdateStatus(id uint, status domain.OrderStatus) (*do
 	}
 
 	if !existing.IsNewStatusValid(status) {
-		return nil, domain.ErrInvalidStatusUpdate
+		return nil, domain.ErrInvalidOrderUpdate
 	}
 
 	existing.Status = status
@@ -85,6 +86,25 @@ func (s *orderServiceImpl) UpdateStatus(id uint, status domain.OrderStatus) (*do
 	go s.statusStore.AddCurrentStatus(result)
 
 	return result, nil
+}
+
+func (s *orderServiceImpl) UpdateDishes(id uint, dishes []domain.Dish) (*domain.Order, error) {
+	if len(dishes) == 0 {
+		return nil, domain.ErrInvalidOrderUpdate
+	}
+
+	existing, err := s.findByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if existing.Status != domain.OrderStatusPending && existing.Status != domain.OrderStatusPreparing {
+		return nil, domain.ErrInvalidOrderUpdate
+	}
+
+	existing.Dishes = dishes
+
+	return s.orderStore.Save(*existing)
 }
 
 func (s *orderServiceImpl) findActiveOrder(id uint) (*domain.Order, error) {

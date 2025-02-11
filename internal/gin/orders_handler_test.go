@@ -180,11 +180,49 @@ var _ = Describe("OrdersHandler", func() {
 
 		When("order update fails due to invalid status", func() {
 			It("should return 400 Bad Request", func() {
-				mockService.EXPECT().UpdateStatus(uint(1), domain.OrderStatusDone).Return(nil, domain.ErrInvalidStatusUpdate)
+				mockService.EXPECT().UpdateStatus(uint(1), domain.OrderStatusDone).Return(nil, domain.ErrInvalidOrderUpdate)
 
 				req, _ := http.NewRequest(http.MethodPut, baseAPIUri+"/1/status/done", nil)
 				router.ServeHTTP(recorder, req)
 
+				Expect(recorder.Code).To(Equal(http.StatusBadRequest))
+			})
+		})
+	})
+
+	Describe("Update Order", func() {
+		var (
+			dishes []domain.Dish
+		)
+
+		BeforeEach(func() {
+			dishes = []domain.Dish{{Name: "Pizza"}}
+		})
+
+		JustBeforeEach(func() {
+			body, _ := json.Marshal(map[string]any{"dishes": dishes})
+			req, _ := http.NewRequest(http.MethodPut, baseAPIUri+"/1", bytes.NewBuffer(body))
+			router.ServeHTTP(recorder, req)
+		})
+
+		When("order status is updated successfully", func() {
+			BeforeEach(func() {
+				order := &domain.Order{ID: 1}
+				mockService.EXPECT().UpdateDishes(uint(1), dishes).Return(order, nil)
+			})
+
+			It("should return 200 OK", func() {
+				Expect(recorder.Code).To(Equal(http.StatusOK))
+				Expect(recorder.Body.String()).To(ContainSubstring(`"id":1`))
+			})
+		})
+
+		When("order update fails due to invalid status", func() {
+			BeforeEach(func() {
+				mockService.EXPECT().UpdateDishes(uint(1), dishes).Return(nil, domain.ErrInvalidOrderUpdate)
+			})
+
+			It("should return 400 Bad Request", func() {
 				Expect(recorder.Code).To(Equal(http.StatusBadRequest))
 			})
 		})

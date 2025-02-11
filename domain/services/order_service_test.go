@@ -163,7 +163,72 @@ var _ = Describe("OrderService", func() {
 			result, err := orderService.UpdateStatus(1, domain.OrderStatusPreparing)
 
 			Expect(result).To(BeNil())
-			Expect(err).To(Equal(domain.ErrInvalidStatusUpdate))
+			Expect(err).To(Equal(domain.ErrInvalidOrderUpdate))
+		})
+	})
+
+	Context("UpdateContent", func() {
+		const fakeID uint = 123
+		When("a new set of dishes is provided", func() {
+			var dishes []domain.Dish
+			BeforeEach(func() {
+				dishes = []domain.Dish{{Name: "Lasagna"}}
+			})
+
+			It("should update when the order is in a valid state", func() {
+				fakeOrder := &domain.Order{
+					ID:     fakeID,
+					Status: domain.OrderStatusPreparing,
+				}
+				mockOrderStore.EXPECT().FindByID(fakeID).Return(fakeOrder, nil)
+
+				updatedOrder := &domain.Order{
+					ID:     fakeID,
+					Status: domain.OrderStatusPreparing,
+					NewOrder: domain.NewOrder{
+						Dishes: dishes,
+					},
+				}
+
+				mockOrderStore.EXPECT().Save(gomock.Any()).Return(updatedOrder, nil)
+
+				result, err := orderService.UpdateDishes(fakeID, dishes)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+				Expect(result.Dishes).To(HaveLen(1))
+			})
+
+			DescribeTable("and the order is in an invalid state", func(status domain.OrderStatus) {
+				fakeOrder := &domain.Order{
+					ID:     fakeID,
+					Status: status,
+				}
+				mockOrderStore.EXPECT().FindByID(fakeID).Return(fakeOrder, nil)
+
+				result, err := orderService.UpdateDishes(fakeID, dishes)
+				Expect(result).To(BeNil())
+				Expect(err).To(Equal(domain.ErrInvalidOrderUpdate))
+			},
+				Entry("should error for ready", domain.OrderStatusReady),
+				Entry("should error for done", domain.OrderStatusDone),
+				Entry("should error for cancelled", domain.OrderStatusCancelled),
+			)
+
+			It("should error when the order doesn't exist", func() {
+				mockOrderStore.EXPECT().FindByID(fakeID).Return(nil, nil)
+
+				result, err := orderService.UpdateDishes(fakeID, dishes)
+				Expect(result).To(BeNil())
+				Expect(err).To(Equal(domain.ErrOrderNotFound))
+			})
+		})
+		When("an empty set of dishes is provided", func() {
+			It("should return an error", func() {
+				result, err := orderService.UpdateDishes(123, nil)
+				Expect(result).To(BeNil())
+				Expect(err).To(Equal(domain.ErrInvalidOrderUpdate))
+			})
 		})
 	})
 })
