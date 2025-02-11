@@ -17,11 +17,12 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+const baseAPIUri = "/api/v1/orders"
+
 var _ = Describe("OrdersHandler", func() {
 	var (
 		ctrl        *gomock.Controller
 		mockService *mocks.MockOrderService
-		handler     *internalGin.OrdersHandler
 		router      *gin.Engine
 		recorder    *httptest.ResponseRecorder
 	)
@@ -29,10 +30,8 @@ var _ = Describe("OrdersHandler", func() {
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockService = mocks.NewMockOrderService(ctrl)
-		handler = internalGin.NewOrdersHandler(mockService)
 		recorder = httptest.NewRecorder()
-		router = gin.Default()
-		internalGin.AddOrderRoutes(handler, router.Group(""))
+		router = internalGin.GetServer(mockService)
 	})
 
 	Describe("Create Order", func() {
@@ -57,7 +56,7 @@ var _ = Describe("OrdersHandler", func() {
 				mockService.EXPECT().CreateOrder(gomock.Any()).Return(order, nil)
 
 				body, _ := json.Marshal(validNewOrder)
-				req, _ := http.NewRequest(http.MethodPost, "/orders", bytes.NewBuffer(body))
+				req, _ := http.NewRequest(http.MethodPost, baseAPIUri, bytes.NewBuffer(body))
 				req.Header.Set("Content-Type", "application/json")
 
 				router.ServeHTTP(recorder, req)
@@ -69,7 +68,7 @@ var _ = Describe("OrdersHandler", func() {
 
 		DescribeTable("request is incorrect", func(request domain.NewOrder) {
 			body, _ := json.Marshal(request)
-			req, _ := http.NewRequest(http.MethodPost, "/orders", bytes.NewBuffer(body))
+			req, _ := http.NewRequest(http.MethodPost, baseAPIUri, bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
 
 			router.ServeHTTP(recorder, req)
@@ -87,7 +86,7 @@ var _ = Describe("OrdersHandler", func() {
 				mockService.EXPECT().CreateOrder(gomock.Any()).Return(nil, errors.New("error"))
 
 				body, _ := json.Marshal(validNewOrder)
-				req, _ := http.NewRequest(http.MethodPost, "/orders", bytes.NewBuffer(body))
+				req, _ := http.NewRequest(http.MethodPost, baseAPIUri, bytes.NewBuffer(body))
 				req.Header.Set("Content-Type", "application/json")
 
 				router.ServeHTTP(recorder, req)
@@ -106,7 +105,7 @@ var _ = Describe("OrdersHandler", func() {
 
 				mockService.EXPECT().FindByID(uint(1)).Return(order, nil)
 
-				req, _ := http.NewRequest(http.MethodGet, "/orders/1", nil)
+				req, _ := http.NewRequest(http.MethodGet, baseAPIUri+"/1", nil)
 				router.ServeHTTP(recorder, req)
 
 				Expect(recorder.Code).To(Equal(http.StatusOK))
@@ -118,7 +117,7 @@ var _ = Describe("OrdersHandler", func() {
 			It("should return 404 Not Found", func() {
 				mockService.EXPECT().FindByID(uint(1)).Return(nil, domain.ErrOrderNotFound)
 
-				req, _ := http.NewRequest(http.MethodGet, "/orders/1", nil)
+				req, _ := http.NewRequest(http.MethodGet, baseAPIUri+"/1", nil)
 				router.ServeHTTP(recorder, req)
 
 				Expect(recorder.Code).To(Equal(http.StatusNotFound))
@@ -132,7 +131,7 @@ var _ = Describe("OrdersHandler", func() {
 				orders := []domain.Order{{ID: 1, Status: domain.OrderStatusPending}}
 				mockService.EXPECT().FindMany(gomock.Len(1)).Return(orders, nil)
 
-				req, _ := http.NewRequest(http.MethodGet, "/orders?active=true", nil)
+				req, _ := http.NewRequest(http.MethodGet, baseAPIUri+"?active=true", nil)
 				router.ServeHTTP(recorder, req)
 
 				Expect(recorder.Code).To(Equal(http.StatusOK))
@@ -143,9 +142,9 @@ var _ = Describe("OrdersHandler", func() {
 		When("all orders are requested", func() {
 			It("should return 200 OK with filtered orders", func() {
 				orders := []domain.Order{{ID: 1, Status: domain.OrderStatusPending}}
-				mockService.EXPECT().FindMany(gomock.Any()).Return(orders, nil)
+				mockService.EXPECT().FindMany(gomock.Len(0)).Return(orders, nil)
 
-				req, _ := http.NewRequest(http.MethodGet, "/orders?active=true", nil)
+				req, _ := http.NewRequest(http.MethodGet, baseAPIUri, nil)
 				router.ServeHTTP(recorder, req)
 
 				Expect(recorder.Code).To(Equal(http.StatusOK))
@@ -157,7 +156,7 @@ var _ = Describe("OrdersHandler", func() {
 			It("should return 500 Internal Server Error", func() {
 				mockService.EXPECT().FindMany(gomock.Any()).Return(nil, errors.New("error"))
 
-				req, _ := http.NewRequest(http.MethodGet, "/orders", nil)
+				req, _ := http.NewRequest(http.MethodGet, baseAPIUri, nil)
 				router.ServeHTTP(recorder, req)
 
 				Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
@@ -171,7 +170,7 @@ var _ = Describe("OrdersHandler", func() {
 				order := &domain.Order{ID: 1, Status: domain.OrderStatusDone}
 				mockService.EXPECT().UpdateStatus(uint(1), domain.OrderStatusDone).Return(order, nil)
 
-				req, _ := http.NewRequest(http.MethodPut, "/orders/1/status/done", nil)
+				req, _ := http.NewRequest(http.MethodPut, baseAPIUri+"/1/status/done", nil)
 				router.ServeHTTP(recorder, req)
 
 				Expect(recorder.Code).To(Equal(http.StatusOK))
@@ -183,7 +182,7 @@ var _ = Describe("OrdersHandler", func() {
 			It("should return 400 Bad Request", func() {
 				mockService.EXPECT().UpdateStatus(uint(1), domain.OrderStatusDone).Return(nil, domain.ErrInvalidStatusUpdate)
 
-				req, _ := http.NewRequest(http.MethodPut, "/orders/1/status/done", nil)
+				req, _ := http.NewRequest(http.MethodPut, baseAPIUri+"/1/status/done", nil)
 				router.ServeHTTP(recorder, req)
 
 				Expect(recorder.Code).To(Equal(http.StatusBadRequest))

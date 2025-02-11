@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func AddOrderRoutes(ordersHandler *OrdersHandler, api *gin.RouterGroup) {
+func addOrderRoutes(ordersHandler *OrdersHandler, api *gin.RouterGroup) {
 	orders := api.Group("/orders")
 	orders.GET("", ordersHandler.List)
 	orders.POST("", ordersHandler.Create)
@@ -22,6 +22,6 @@ func GetServer(orderService services.OrderService) *gin.Engine {
 	router := gin.Default()
 
 	api := router.Group("/api/v1")
-	AddOrderRoutes(ordersHandler, api)
+	addOrderRoutes(ordersHandler, api)
 	return router
 }

@@ -17,6 +17,8 @@ func NewOrderStatusStore(db *gorm.DB) services.OrderStatusStore {
 	}
 }
 
+// TODO: Check order exists
+// TODO: Check current status is not latest
 func (o *orderStatusStore) AddCurrentStatus(order *domain.Order) error {
 	status := models.OrderStatus{
 		OrderID: order.ID,
